@@ -1,0 +1,26 @@
+version: '3'
+services:
+  
+  backend:
+    build: ./backend
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+    volumes: 
+      - frontend_volume:/home/app/frontend/dist
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"  # Expose Nginx on port 80
+    volumes:
+      - frontend_volume:/var/www/frontend 
+    depends_on:
+      - backend
+      - frontend
+    restart: always
+
+volumes:
+  frontend_volume:

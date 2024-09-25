@@ -1,0 +1,6 @@
+{
+	"/": [
+		"svelte/routes/+layout.ts",
+		"svelte/routes/+layout.ts"
+	]
+}

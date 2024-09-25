@@ -1,0 +1,10 @@
+ktor:
+    development: true
+    application:
+        modules:
+            - cz.regulus.ApplicationKt.module
+    deployment:
+        watch:
+            - classes
+            - resources
+        port: 8080
