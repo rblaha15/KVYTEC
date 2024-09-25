@@ -11,6 +11,9 @@ WORKDIR /app
 COPY gradle gradle
 COPY build.gradle.kts settings.gradle.kts gradlew ./
 
+# Set executable permissions for gradlew
+RUN chmod +x gradlew
+
 # Copy Kotlin source code
 COPY src /app/src
 
