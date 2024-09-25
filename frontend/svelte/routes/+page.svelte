@@ -2,8 +2,7 @@
 	import DoubleDropdown from './DoubleDropdown.svelte';
 	import Dropdown from './Dropdown.svelte';
 	import Checkbox from './Checkbox.svelte';
-	import { dev } from '$app/environment';
-	const apiUrl = import.meta.env.VITE_API_URL;
+	const apiUrl = 'http://localhost';
 
 	const fieldNameMapping = {
     puvodniZdroj: "Původní zdroj",
@@ -142,14 +141,7 @@
 	};
 
 	let loading: boolean = false;
-	let vysledek: null | Response = dev
-		? {
-				nakladyVytapeniTVPred: 12,
-				nakladyVytapeniTVPo: 12,
-				nakladyOstatniPred: 12,
-				nakladyOstatniPo: 12
-			}
-		: null;
+	let vysledek: null | Response;
 
 	let errorMessage: string | null = null; // New variable for error messages
 
