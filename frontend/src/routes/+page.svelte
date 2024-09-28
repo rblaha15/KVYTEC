@@ -5,58 +5,59 @@
 	const apiUrl = 'http://localhost';
 
 	const fieldNameMapping = {
-    puvodniZdroj: "Původní zdroj",
-    cenaZP: "Cena zemního plynu",
-    cenaUhli: "Cena uhlí",
-    spotrebaUhli: "Spotřeba uhlí",
-    ucinnost: "Účinnost",
-    zpusobOhrevu: "Způsob ohřevu",
-    osob: "Počet osob",
-    pozadovanaTeplota: "Požadovaná teplota",
-    cirkulaceTV: "Cirkulace TV",
-    jisticPred: "Jistič před",
-    jisticPo: "Jistič po",
-    cenaEeVtPred: "Cena EE VT před",
-    cenaEeNtPred: "Cena EE NT před",
-    cenaEeVtPo: "Cena EE VT po",
-    cenaEeNtPo: "Cena EE NT po",
-    tepelnaZtrata: "Tepelná ztráta",
-    spotreba: "Spotřeba",
-    venkovniTeplota: "Venkovní teplota",
-    teplotniSpad: "Teplotní spád",
-    tc: "TČ",
-};
+		puvodniZdroj: 'Původní zdroj',
+		cenaZP: 'Cena zemního plynu',
+		cenaUhli: 'Cena uhlí',
+		spotrebaUhli: 'Spotřeba uhlí',
+		ucinnost: 'Účinnost',
+		zpusobOhrevu: 'Způsob ohřevu',
+		osob: 'Počet osob',
+		pozadovanaTeplota: 'Požadovaná teplota',
+		cirkulaceTV: 'Cirkulace TV',
+		jisticPred: 'Jistič před',
+		jisticPo: 'Jistič po',
+		cenaEeVtPred: 'Cena EE VT před',
+		cenaEeNtPred: 'Cena EE NT před',
+		cenaEeVtPo: 'Cena EE VT po',
+		cenaEeNtPo: 'Cena EE NT po',
+		tepelnaZtrata: 'Tepelná ztráta',
+		spotreba: 'Spotřeba',
+		venkovniTeplota: 'Venkovní teplota',
+		teplotniSpad: 'Teplotní spád',
+		tc: 'TČ'
+	};
 
-
-	let validationErrors: { [key: string]: string } = {}; // Maps field names to error messages
+	let validationErrors: { [key in keyof typeof fieldNameMapping]?: string } = {}; // Maps field names to error messages
 
 	const validateNumberInput = (
-    event: Event,
-    fieldName: keyof typeof fieldNameMapping, // Ensure fieldName is one of the keys from fieldNameMapping
-    setValue: (value: string) => void,
-    maxLength: number
-) => {
-    const input = event.target as HTMLInputElement;
-    let value = input.value;
+		event: Event & {
+			currentTarget: EventTarget & HTMLInputElement
+		},
+		fieldName: keyof typeof fieldNameMapping, // Ensure fieldName is one of the keys from fieldNameMapping
+		setValue: (value: string) => void,
+		maxLength: number
+	) => {
+		const input = event.currentTarget;
+		let value = input.value;
 
-    // Allow negative numbers (optional '-') and numbers with optional decimal point
-    if (!/^-?\d*\.?\d*$/.test(value)) {
-        validationErrors[fieldName] = "Neplatný vstup: vstup musí být číslo.";
-        input.value = value.slice(0, -1); // Remove last character if it's invalid
-    } else if (value.length > maxLength) { // Check for max length
-        const friendlyName = fieldNameMapping[fieldName] || fieldName; // Get user-friendly name
-        validationErrors[fieldName] = `Dosáhli jste maximální povolené hodnoty pro pole ${friendlyName}.`;
-        input.value = value.slice(0, maxLength); // Truncate the value to max length
-    } else {
-        validationErrors[fieldName] = ""; // Clear error if valid
-    }
+		// Allow negative numbers (optional '-') and numbers with optional decimal point
+		if (!/^-?\d*\.?\d*$/.test(value)) {
+			validationErrors[fieldName] = 'Neplatný vstup: vstup musí být číslo.';
+			value = value.slice(0, -1); // Remove last character if it's invalid
+		} else if (value.length > maxLength) {
+			// Check for max length
+			const friendlyName = fieldNameMapping[fieldName] || fieldName; // Get user-friendly name
+			validationErrors[fieldName] =
+				`Dosáhli jste maximální povolené hodnoty pro pole ${friendlyName}.`;
+			value = value.slice(0, maxLength); // Truncate the value to max length
+		} else {
+			validationErrors[fieldName] = ''; // Clear error if valid
+		}
 
-    // Update the bound variable
-    setValue(input.value);
-};
-
-
-
+		// Update the bound variable
+		input.value = value
+		setValue(value);
+	};
 
 	const zdroje = ['Plynový kotel', 'Elektrokotel', 'Kotel na uhlí'] as const;
 	const ohrevy = ['kombinovaně i kotlem', 'bojlerem'] as const;
@@ -128,10 +129,10 @@
 	}
 
 	$: {
-    if (puvodniZdroj) {
-        validationErrors = {};  // Clear all validation errors when the source changes
-    }
-}
+		if (puvodniZdroj) {
+			validationErrors = {}; // Clear all validation errors when the source changes
+		}
+	}
 
 	type Response = {
 		nakladyVytapeniTVPred: number;
@@ -145,56 +146,49 @@
 
 	let errorMessage: string | null = null; // New variable for error messages
 
-
 	const vypocitat = async () => {
 		loading = true;
 		vysledek = null;
 		errorMessage = null; // Reset error message
-		const response = await fetch(`${apiUrl}/compute`,
-			{
-				method: 'POST',
-				body: JSON.stringify({
-					puvodniZdroj:
-						puvodniZdroj == 'Kotel na uhlí' ? '3' : puvodniZdroj == 'Elektrokotel' ? '2' : '1',
-					cenaZP: puvodniZdroj == 'Plynový kotel' ? cenaZP : '0',
-					cenaUhli: puvodniZdroj == 'Kotel na uhlí' ? cenaUhli : '0',
-					spotrebaUhli,
-					ucinnost: String(Number(ucinnost) / 100),
-					zpusobOhrevu,
-					osob,
-					pozadovanaTeplota,
-					cirkulaceTV: cirkulaceTV ? 'ano' : 'ne',
-					jisticPred,
-					jisticPo,
-					cenaEeVtPred,
-					cenaEeNtPred,
-					cenaEeVtPo,
-					cenaEeNtPo,
-					tepelnaZtrata,
-					spotreba,
-					venkovniTeplota,
-					teplotniSpad,
-					tc
-				})
-			}
-		);
+		const response = await fetch(`${apiUrl}/compute`, {
+			method: 'POST',
+			body: JSON.stringify({
+				puvodniZdroj:
+					puvodniZdroj == 'Kotel na uhlí' ? '3' : puvodniZdroj == 'Elektrokotel' ? '2' : '1',
+				cenaZP: puvodniZdroj == 'Plynový kotel' ? cenaZP : '0',
+				cenaUhli: puvodniZdroj == 'Kotel na uhlí' ? cenaUhli : '0',
+				spotrebaUhli,
+				ucinnost: String(Number(ucinnost) / 100),
+				zpusobOhrevu,
+				osob,
+				pozadovanaTeplota,
+				cirkulaceTV: cirkulaceTV ? 'ano' : 'ne',
+				jisticPred,
+				jisticPo,
+				cenaEeVtPred,
+				cenaEeNtPred,
+				cenaEeVtPo,
+				cenaEeNtPo,
+				tepelnaZtrata,
+				spotreba,
+				venkovniTeplota,
+				teplotniSpad,
+				tc
+			})
+		});
 
-		loading = false; 
+		loading = false;
 
 		if (!response.ok) {
-		if (response.status === 400) {
-			errorMessage = "Chyba validace dat, poskytněte platná data.";
+			if (response.status === 400) {
+				errorMessage = 'Chyba validace dat, poskytněte platná data.';
+			} else {
+				errorMessage = 'Nastala chyba při výpočtu.';
+			}
 		} else {
-			errorMessage = "Nastala chyba při výpočtu.";
+			vysledek = (await response.json()) as Response; // Process the successful response
 		}
-	} else {
-		vysledek = await response.json() as Response; // Process the successful response
-	}
-		};
-
-
-
-	
+	};
 </script>
 
 <div class="mb-2">
@@ -205,88 +199,83 @@
 <Dropdown values={zdroje} bind:value={puvodniZdroj} />
 
 {#if puvodniZdroj == 'Plynový kotel'}
-
-<div class="d-flex align-items-end">
-	<label class="form-label d-block">
-	Cena zemního plynu: 
-		<div class="input-group d-flex">
-		<input 
-			id="cenaZP" 
-			type="text" 
-			class="form-control" 
-			bind:value={cenaZP} 
-			on:input={e => validateNumberInput(e, 'cenaZP', value => cenaZP = value, 5)} 
-			/>
-		<span class="input-group-text border-start-0">Kč/kWh</span>
+	<div class="d-flex align-items-end">
+		<label class="form-label d-block">
+			Cena zemního plynu:
+			<div class="input-group d-flex">
+				<input
+					id="cenaZP"
+					type="text"
+					class="form-control"
+					value={cenaZP}
+					on:input={(e) => validateNumberInput(e, 'cenaZP', (value) => (cenaZP = value), 5)}
+				/>
+				<span class="input-group-text border-start-0">Kč/kWh</span>
+			</div>
+			{#if validationErrors['cenaZP']}
+				<div class="error">{validationErrors['cenaZP']}</div>
+			{/if}
+		</label>
 	</div>
-	{#if validationErrors['cenaZP']}
-	<div class="error">{validationErrors['cenaZP']}</div>
-	{/if}
-	</label>
-</div>
-
 {/if}
-
-
-
 
 {#if puvodniZdroj == 'Kotel na uhlí'}
 	<div class="d-flex align-items-end">
 		<label class="form-label d-block">
 			Spotřeba uhlí:
 			<div class="input-group d-flex">
-				<input 
-					type="text" 
-					class="form-control border-end-0" 
-					bind:value={spotrebaUhli} 
-					on:input={e => validateNumberInput(e, 'spotrebaUhli', value => spotrebaUhli = value, 5)}  
-					/>
+				<input
+					type="text"
+					class="form-control border-end-0"
+					value={spotrebaUhli}
+					on:input={(e) =>
+						validateNumberInput(e, 'spotrebaUhli', (value) => (spotrebaUhli = value), 5)}
+				/>
 				<span class="input-group-text border-start-0">q</span>
 				<span class="input-group-text border-start-0">/</span>
 				<span class="input-group-text border-start-0">rok</span>
 			</div>
 			{#if validationErrors['spotrebaUhli']}
-			<div class="error">{validationErrors['spotrebaUhli']}</div>
+				<div class="error">{validationErrors['spotrebaUhli']}</div>
 			{/if}
 		</label>
 		<span class="ms-2"></span>
 		<label class="form-label d-block">
 			Cena uhlí:
 			<div class="input-group d-flex">
-				<input 
-					type="text" 
-					class="form-control border-end-0" 
-					bind:value={cenaUhli} 
-					on:input={e => validateNumberInput(e, 'cenaUhli', value => cenaUhli = value, 5)}  
-					/>
+				<input
+					type="text"
+					class="form-control border-end-0"
+					value={cenaUhli}
+					on:input={(e) => validateNumberInput(e, 'cenaUhli', (value) => (cenaUhli = value), 5)}
+				/>
 				<span class="input-group-text border-start-0">Kč</span>
 				<span class="input-group-text border-start-0">/</span>
 				<span class="input-group-text border-start-0">q</span>
 			</div>
 			{#if validationErrors['cenaUhli']}
-			<div class="error">{validationErrors['cenaUhli']}</div>
+				<div class="error">{validationErrors['cenaUhli']}</div>
 			{/if}
 		</label>
 	</div>
 {/if}
 
 {#if puvodniZdroj == 'Plynový kotel'}
-    <label>
-        Účinnost:
-        <div class="input-group">
-            <input 
-                type="text" 
-                class="form-control" 
-                bind:value={ucinnost} 
-
-				on:input={e => validateNumberInput(e, 'ucinnost', value => ucinnost = value,2)}  
-				/>
-            <span class="input-group-text">%</span>
-        </div>
+	<label>
+		Účinnost:
+		<div class="input-group">
+			<input
+				type="text"
+				class="form-control"
+				value={ucinnost}
+				on:input={(e) => validateNumberInput(e, 'ucinnost', (value) => (ucinnost = value), 2)}
+			/>
+			<span class="input-group-text">%</span>
+		</div>
 		{#if validationErrors['ucinnost']}
 			<div class="error">{validationErrors['ucinnost']}</div>
 		{/if}
-    </label>
+	</label>
 {/if}
 
 <div class="d-flex align-items-end">
@@ -307,21 +296,19 @@
 <label>
 	Běžná spotřeba domácnosti: (vaření, svícení, PC, …)
 	<div class="input-group">
-		<input 
-			id = "spotreba"
-			type="number" 
-			class="form-control" 
-			bind:value={spotreba} 
-
-			on:input={e => validateNumberInput(e, 'spotreba', value => spotreba = value, 8)} 
-			/>
-            <span class="input-group-text">kWh/rok</span>
-		</div>
-		{#if validationErrors['spotreba']}
-			<div class="error">{validationErrors['spotreba']}</div>
-		{/if}
+		<input
+			id="spotreba"
+			type="number"
+			class="form-control"
+			value={spotreba}
+			on:input={(e) => validateNumberInput(e, 'spotreba', (value) => (spotreba = value), 8)}
+		/>
+		<span class="input-group-text">kWh/rok</span>
+	</div>
+	{#if validationErrors['spotreba']}
+		<div class="error">{validationErrors['spotreba']}</div>
+	{/if}
 </label>
-
 
 <div class="d-flex text-center">
 	<div>
@@ -346,21 +333,22 @@
 		Cena EE (silovka): Vysoký tarif
 		<div class="input-group">
 			<!-- First input for 'cenaEeVtPred' -->
-			<input 
-				type="text" 
-				class="form-control border-end-0" 
-				bind:value={cenaEeVtPred} 
-				on:input={e => validateNumberInput(e, 'cenaEeVtPred', value => cenaEeVtPred = value, 5)} 
+			<input
+				type="text"
+				class="form-control border-end-0"
+				value={cenaEeVtPred}
+				on:input={(e) =>
+					validateNumberInput(e, 'cenaEeVtPred', (value) => (cenaEeVtPred = value), 5)}
 			/>
-			
+
 			<!-- Second input for 'cenaEeVtPo' -->
-			<input 
-				type="text" 
-				class="form-control border-end-0" 
-				bind:value={cenaEeVtPo} 
-				on:input={e => validateNumberInput(e, 'cenaEeVtPo', value => cenaEeVtPo = value, 5)} 
+			<input
+				type="text"
+				class="form-control border-end-0"
+				value={cenaEeVtPo}
+				on:input={(e) => validateNumberInput(e, 'cenaEeVtPo', (value) => (cenaEeVtPo = value), 5)}
 			/>
-			
+
 			<!-- Units display -->
 			<span class="input-group-text">kWh</span>
 		</div>
@@ -377,29 +365,29 @@
 	<div class="error">{validationErrors['cenaEeVtPo']}</div>
 {/if}
 
-
 <div class="d-flex">
 	<label class="form-label">
 		Cena EE (silovka): Nízký tarif
 		<div class="input-group">
 			<!-- First input for 'cenaEeNtPred' -->
-			<input 
-				type="text" 
-				class="form-control border-end-0" 
-				bind:value={cenaEeNtPred} 
-				on:input={e => validateNumberInput(e, 'cenaEeNtPred', value => cenaEeNtPred = value, 5)} 
+			<input
+				type="text"
+				class="form-control border-end-0"
+				value={cenaEeNtPred}
+				on:input={(e) =>
+					validateNumberInput(e, 'cenaEeNtPred', (value) => (cenaEeNtPred = value), 5)}
 			/>
-			
+
 			<!-- Second input for 'cenaEeNtPo' -->
-			<input 
-				type="text" 
-				class="form-control border-end-0" 
-				bind:value={cenaEeNtPo} 
-				on:input={e => validateNumberInput(e, 'cenaEeNtPo', value => cenaEeNtPo = value, 5)} 
+			<input
+				type="text"
+				class="form-control border-end-0"
+				value={cenaEeNtPo}
+				on:input={(e) => validateNumberInput(e, 'cenaEeNtPo', (value) => (cenaEeNtPo = value), 5)}
 			/>
-			
+
 			<!-- Units display -->
-				<span class="input-group-text">kWh</span>
+			<span class="input-group-text">kWh</span>
 		</div>
 	</label>
 </div>
@@ -414,7 +402,6 @@
 	<div class="error">{validationErrors['cenaEeNtPo']}</div>
 {/if}
 
-
 <hr />
 <h4>Vytápění</h4>
 {#if puvodniZdroj != 'Kotel na uhlí'}
@@ -423,15 +410,16 @@
 			Tepelná ztráta budovy:
 			<div class="input-group">
 				<!-- Input for 'tepelnaZtrata' -->
-				<input 
-					type="text" 
-					class="form-control border-end-0" 
-					bind:value={tepelnaZtrata} 
-					on:input={e => validateNumberInput(e, 'tepelnaZtrata', value => tepelnaZtrata = value, 5)} 
+				<input
+					type="text"
+					class="form-control border-end-0"
+					value={tepelnaZtrata}
+					on:input={(e) =>
+						validateNumberInput(e, 'tepelnaZtrata', (value) => (tepelnaZtrata = value), 5)}
 				/>
-				
+
 				<!-- Units display -->
-					<span class="input-group-text">kWh</span>
+				<span class="input-group-text">kWh</span>
 			</div>
 		</label>
 	</div>
@@ -447,15 +435,16 @@
 		<span>Venkovní výpočtová teplota <code>t<sub>e</sub></code>:</span>
 		<div class="input-group">
 			<!-- Input for 'venkovniTeplota' -->
-			<input 
-				type="text" 
-				class="form-control border-end-0" 
-				bind:value={venkovniTeplota} 
-				on:input={e => validateNumberInput(e, 'venkovniTeplota', value => venkovniTeplota = value, 3)}
+			<input
+				type="text"
+				class="form-control border-end-0"
+				value={venkovniTeplota}
+				on:input={(e) =>
+					validateNumberInput(e, 'venkovniTeplota', (value) => (venkovniTeplota = value), 3)}
 			/>
 
 			<!-- Units display -->
-				<span class="input-group-text">˚C</span>
+			<span class="input-group-text">˚C</span>
 		</div>
 	</label>
 </div>
@@ -465,28 +454,26 @@
 	<div class="error">{validationErrors['venkovniTeplota']}</div>
 {/if}
 
-
-
 <div class="d-flex align-items-end">
 	<div class="d-flex">
 		<label class="form-label">
 			Teplotní spád soustavy:
 			<div class="input-group">
 				<!-- Input for 'teplotniSpad' -->
-				<input 
-					type="text" 
-					class="form-control border-end-0" 
-					bind:value={teplotniSpad} 
-					on:input={e => validateNumberInput(e, 'teplotniSpad', value => teplotniSpad = value, 2)}
+				<input
+					type="text"
+					class="form-control border-end-0"
+					value={teplotniSpad}
+					on:input={(e) =>
+						validateNumberInput(e, 'teplotniSpad', (value) => (teplotniSpad = value), 2)}
 				/>
-	
+
 				<!-- Units display -->
-					<span class="input-group-text">˚C</span>
+				<span class="input-group-text">˚C</span>
 			</div>
 		</label>
 	</div>
 
-	
 	<span class="px-3 py-3 d-flex align-items-center">/</span>
 	<div class="form-label d-block">
 		<spa />
@@ -511,13 +498,13 @@
 			Počet osob:
 			<div class="input-group">
 				<!-- Input for 'osob' -->
-				<input 
-					type="text" 
-					class="form-control border-end-0" 
-					bind:value={osob} 
-					on:input={e => validateNumberInput(e, 'osob', value => osob = value, 3)} 
+				<input
+					type="text"
+					class="form-control border-end-0"
+					value={osob}
+					on:input={(e) => validateNumberInput(e, 'osob', (value) => (osob = value), 3)}
 				/>
-	
+
 				<!-- Units display based on the number of people -->
 				<span class="input-group-text">
 					{Number(osob) == 1 ? 'osobu' : Number(osob) >= 2 && Number(osob) <= 4 ? 'osoby' : 'osob'}
@@ -525,36 +512,36 @@
 			</div>
 		</label>
 	</div>
-	
+
 	<!-- Add margin to the second field to create a gap -->
 	<div class="d-flex ms-3">
 		<label class="form-label">
 			Požadovaná teplota:
 			<div class="input-group">
 				<!-- Input for 'pozadovanaTeplota' -->
-				<input 
-					type="text" 
-					class="form-control border-end-0" 
-					bind:value={pozadovanaTeplota} 
-					on:input={e => validateNumberInput(e, 'pozadovanaTeplota', value => pozadovanaTeplota = value, 2)}
+				<input
+					type="text"
+					class="form-control border-end-0"
+					value={pozadovanaTeplota}
+					on:input={(e) =>
+						validateNumberInput(e, 'pozadovanaTeplota', (value) => (pozadovanaTeplota = value), 2)}
 				/>
-	
+
 				<!-- Units display -->
 				<span class="input-group-text">˚C</span>
 			</div>
 		</label>
 	</div>
 </div>
-	<!-- Validation Error for 'pozadovanaTeplota' -->
-	{#if validationErrors['pozadovanaTeplota']}
-		<div class="error">{validationErrors['pozadovanaTeplota']}</div>
-	{/if}
+<!-- Validation Error for 'pozadovanaTeplota' -->
+{#if validationErrors['pozadovanaTeplota']}
+	<div class="error">{validationErrors['pozadovanaTeplota']}</div>
+{/if}
 
-	<!-- Validation Error for 'osob' -->
-	{#if validationErrors['osob']}
-		<div class="error">{validationErrors['osob']}</div>
-	{/if}
-	
+<!-- Validation Error for 'osob' -->
+{#if validationErrors['osob']}
+	<div class="error">{validationErrors['osob']}</div>
+{/if}
 
 <hr />
 <p>Orientační tepelná ztráta budovy: {tepelnaZtrata} kW</p>
@@ -566,41 +553,41 @@
 		<p class="ms-2 my-auto">Počítání…</p>
 	</div>
 {:else}
-    <button class="btn btn-lg btn-success" on:click={vypocitat}>Vypočítat</button>
-		{#if errorMessage}
-			<div class="alert alert-danger mt-2">{errorMessage}</div> 
-		{/if}
-		{#if vysledek != null}
-			{@const nakladyPred = vysledek.nakladyVytapeniTVPred + vysledek.nakladyOstatniPred}
-			{@const nakladyPo = vysledek.nakladyVytapeniTVPo + vysledek.nakladyOstatniPo}
-			{@const uspora = nakladyPred - nakladyPo}
-			<div>
-				<div class="d-flex text-center">
-					<p class="w-60"></p>
-					<h5 class="w-20 min mx-2">Původně:</h5>
-					<h5 class="w-20 min">Nově s TČ:</h5>
-				</div>
-				<div class="d-flex align-items-center">
-					<p class="w-60"><b>Náklady na vytápění a ohřev vody:</b></p>
-					<p class="w-20 min mx-2 text-center">{vysledek.nakladyVytapeniTVPred.toLocaleString()} Kč</p>
-					<p class="w-20 min text-center">{vysledek.nakladyVytapeniTVPo.toLocaleString()} Kč</p>
-				</div>
-				<div class="d-flex align-items-center">
-					<p class="w-60"><b>Náklady na ostatní spotřebiče (včetně stálých plateb):</b></p>
-					<p class="w-20 min mx-2 text-center">{vysledek.nakladyOstatniPred.toLocaleString()} Kč</p>
-					<p class="w-20 min text-center">{vysledek.nakladyOstatniPo.toLocaleString()} Kč</p>
-				</div>
-				<div class="d-flex align-items-center">
-					<p class="w-60"><b>Celkové náklady:</b></p>
-					<p class="w-20 min mx-2 text-center">{nakladyPred.toLocaleString()} Kč</p>
-					<p class="w-20 min text-center">{nakladyPo.toLocaleString()} Kč</p>
-				</div>
-				<div class="d-flex fs-4 align-items-center">
-					<p class="w-60"><b>Celková úspora při přechodu na tepelné čerpadlo:</b></p>
-					<p class="w-40 ms-2 text-center">{uspora.toLocaleString()} Kč</p>
-				</div>
+	<button class="btn btn-lg btn-success" on:click={vypocitat}>Vypočítat</button>
+	{#if errorMessage}
+		<div class="alert alert-danger mt-2">{errorMessage}</div>
+	{/if}
+	{#if vysledek != null}
+		{@const nakladyPred = vysledek.nakladyVytapeniTVPred + vysledek.nakladyOstatniPred}
+		{@const nakladyPo = vysledek.nakladyVytapeniTVPo + vysledek.nakladyOstatniPo}
+		{@const uspora = nakladyPred - nakladyPo}
+		<div>
+			<div class="d-flex text-center">
+				<p class="w-60"></p>
+				<h5 class="w-20 min mx-2">Původně:</h5>
+				<h5 class="w-20 min">Nově s TČ:</h5>
 			</div>
-		{/if}
+			<div class="d-flex align-items-center">
+				<p class="w-60"><b>Náklady na vytápění a ohřev vody:</b></p>
+				<p class="w-20 min mx-2 text-center">
+					{vysledek.nakladyVytapeniTVPred.toLocaleString()} Kč
+				</p>
+				<p class="w-20 min text-center">{vysledek.nakladyVytapeniTVPo.toLocaleString()} Kč</p>
+			</div>
+			<div class="d-flex align-items-center">
+				<p class="w-60"><b>Náklady na ostatní spotřebiče (včetně stálých plateb):</b></p>
+				<p class="w-20 min mx-2 text-center">{vysledek.nakladyOstatniPred.toLocaleString()} Kč</p>
+				<p class="w-20 min text-center">{vysledek.nakladyOstatniPo.toLocaleString()} Kč</p>
+			</div>
+			<div class="d-flex align-items-center">
+				<p class="w-60"><b>Celkové náklady:</b></p>
+				<p class="w-20 min mx-2 text-center">{nakladyPred.toLocaleString()} Kč</p>
+				<p class="w-20 min text-center">{nakladyPo.toLocaleString()} Kč</p>
+			</div>
+			<div class="d-flex fs-4 align-items-center">
+				<p class="w-60"><b>Celková úspora při přechodu na tepelné čerpadlo:</b></p>
+				<p class="w-40 ms-2 text-center">{uspora.toLocaleString()} Kč</p>
+			</div>
+		</div>
+	{/if}
 {/if}
-
-
