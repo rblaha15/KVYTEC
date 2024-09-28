@@ -14,7 +14,7 @@ version = "0.0.1"
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 
-    val isDevelopment = true//project.ext.has("development")
+    val isDevelopment = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
@@ -32,17 +32,6 @@ ktor {
         archiveFileName.set("ekonomicke-zhodnoceni-tc.jar")
     }
 }
-
-configure<AppEngineAppYamlExtension> {
-    stage {
-        setArtifact("build/libs/ekonomicke-zhodnoceni-tc.jar")
-    }
-    deploy {
-        version = "dev"
-        projectId = "ekonomicke-zhodnoceni-tc"
-    }
-}
-
 repositories {
     mavenCentral()
 }
