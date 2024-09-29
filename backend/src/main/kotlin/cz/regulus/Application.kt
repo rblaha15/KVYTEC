@@ -203,7 +203,7 @@ fun Application.module() {
                     processExcelFile(it)
                 }
             } catch (e: Exception) {
-                println("Error: ${e.message}")
+                println("Error: ${e.stackTraceToString()}")
                 call.respond(HttpStatusCode.InternalServerError, "An error occurred.")
             }
         }
