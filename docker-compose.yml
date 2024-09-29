@@ -1,9 +1,13 @@
 version: '3'
 services:
-  
+
   backend:
     build: ./backend
     restart: always
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
 
   frontend:
     build:
