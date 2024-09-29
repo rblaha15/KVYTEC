@@ -5,7 +5,6 @@ frontend/node_modules
 frontend/.svelte-kit
 backend/build
 frontend/dist
-src/main/resources/svelte
 
 # OS
 .DS_Store
@@ -21,8 +20,9 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-.gradle
+backend/.gradle
 /.idea/libraries/
-/src/main/resources/static/
-/out/production/
-/.kotlin/errors
+backend/out/production/
+backend/.kotlin/errors
+
+backend/src/main/resources/bilance.xlsx
