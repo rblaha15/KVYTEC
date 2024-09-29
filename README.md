@@ -1,2 +1,2 @@
-# KVYTEC
-KVÝTEČ – Kalkulačka výhodnosti tepelných čerpadel Regulus
+# KVÝTEČ
+### Kalkulačka výhodnosti tepelných čerpadel Regulus
