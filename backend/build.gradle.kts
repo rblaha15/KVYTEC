@@ -1,11 +1,8 @@
-import com.google.cloud.tools.gradle.appengine.appyaml.AppEngineAppYamlExtension
-
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlinx.serialization)
     id("com.gradleup.shadow") version "8.3.1"
-    id("com.google.cloud.tools.appengine") version "2.8.0"
 }
 
 group = "cz.regulus"
@@ -27,11 +24,7 @@ kotlin {
     jvmToolchain(8)
 }
 
-ktor {
-    fatJar {
-        archiveFileName.set("ekonomicke-zhodnoceni-tc.jar")
-    }
-}
+
 repositories {
     mavenCentral()
 }
@@ -45,5 +38,4 @@ dependencies {
     @Suppress("VulnerableLibrariesLocal", "RedundantSuppression")
     implementation("org.apache.poi:poi-ooxml:5.2.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.2")
-    
 }

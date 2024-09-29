@@ -30,4 +30,4 @@ RUN ./gradlew build --no-daemon
 EXPOSE 8080
 
 # Run the application
-CMD ["java", "-jar", "build/libs/ekonomicke-zhodnoceni-tc.jar"]
+CMD ["java", "-jar", "build/libs/KVÝTEČ-all.jar"]
