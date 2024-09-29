@@ -1,9 +1,8 @@
 node_modules
+frontend/node_modules
 
 # Output
-.output
-.vercel
-/.svelte-kit
+frontend/.svelte-kit
 backend/build
 frontend/dist
 src/main/resources/svelte
